@@ -1,0 +1,140 @@
+/****************************************************************************
+ * Copyright 2011 Benjamin Kellermann, Martin Sachse, Oliver Hoehne,        *
+ * Robert Bachran                                                           *
+ *                                                                          *
+ * This file is part of dudle.                                              *
+ *                                                                          *
+ * Dudle is free software: you can redistribute it and/or modify it under   *
+ * the terms of the GNU Affero General Public License as published by       *
+ * the Free Software Foundation, either version 3 of the License, or        *
+ * (at your option) any later version.                                      *
+ *                                                                          *
+ * Dudle is distributed in the hope that it will be useful, but WITHOUT ANY *
+ * WARRANTY; without even the implied warranty of MERCHANTABILITY or        *
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Affero General Public     *
+ * License for more details.                                                *
+ *                                                                          *
+ * You should have received a copy of the GNU Affero General Public License *
+ * along with dudle.  If not, see <http://www.gnu.org/licenses/>.           *
+ ****************************************************************************/
+
+"use strict";
+/*global doEncrypt */
+
+
+Asymcrypt.encrypt = function (encryption, keyId, publicKey, text) {
+	return doEncrypt(keyId, encryption, publicKey, text); // encryption 0-> RSA, 1->ElGamal 
+};
+
+/**
+* saves the encrypted data to the asymcrypt_data.yaml
+*/
+Asymcrypt.savePollData = function (encryption, keyId, publicKey) {
+	var enc_user_input, user_input = Poll.getParticipantInput();
+
+	if (user_input.name.length !== 0) {
+		if (user_input.name.match(/"/) || user_input.name.match(/'/)) {
+			Poll.error(_("The username must not contain the characters ' and \"!"));
+			return false;
+		}
+		user_input.name = escapeHtml(user_input.name);
+		delete(user_input.oldname);
+		
+		enc_user_input = Asymcrypt.encrypt(encryption, keyId, publicKey, JSON.stringify(user_input));
+		Poll.store("Asymcrypt", "vote_" + Asymcrypt.castedVotes, JSON.stringify(enc_user_input), {
+			success: function () {
+				Poll.store("Asymcrypt", "castedVotes", Asymcrypt.castedVotes + 1, {
+					success: function () {
+						Asymcrypt.castedVotes++;
+					}
+				});
+			}
+		});
+	}
+};
+
+Asymcrypt.encryptedHtmlRow = function (id, content) {
+	return '<tr id="' + id + '" class="participantrow"><td colspan="' + $('#separator_top td').attr('colspan') + '" >' + content + '</td></tr>';
+};
+
+
+/**
+* formats the fingerprint
+*/
+Asymcrypt.toFingerprint = function (fingerprint) {
+	fingerprint = fingerprint.toUpperCase();
+	var to = fingerprint.length,
+		niceFingerprint = "", i;
+	for (i = 0; i < to; i++) {
+		niceFingerprint += fingerprint[i];
+		if ((i + 1) % 4 === 0 && (i + 1) !== to) {
+			niceFingerprint += ' ';
+		}
+	}
+	return niceFingerprint;
+};
+
+
+$(document).ready(function () {
+	Poll.load("Asymcrypt", "initiator", {
+		success: function (initiator) {
+			var db = JSON.parse(initiator),
+				keyOwnerName = $('<div/>').text(db.keyOwner.replace(/ <.*>/g, '')).html(),
+				hint;
+			hint = '<div class="shorttextcolumn"';
+			hint += 'title="' + printf(_("e-mail: %1, fingerprint: %2"), [db.keyOwner.replace(/^[^<]*</, '').replace(/>/, ""), Asymcrypt.toFingerprint(db.fingerprint)]);
+			hint += '"><span class="hint">';
+			hint += printf(_('Your vote will be encrypted to %1.'), [keyOwnerName]);
+			hint += '</span></div>';
+			$(hint).insertBefore('#savebutton');
+
+			Poll.load("Asymcrypt", "castedVotes", {
+				success: function (n) {
+					Asymcrypt.castedVotes = parseInt(n, 10);
+					if (Asymcrypt.castedVotes > 0) {
+						Asymcrypt.encryptedRows = "";
+
+						// FIXME: mit irgendwas wie Poll.addline ersetzen
+						$(Asymcrypt.encryptedHtmlRow(
+							'encryptedData', 
+							printf(_('There are encrypted votes. Klick here if you are %1.'), [keyOwnerName])
+						)).click(function () {
+							$('#encryptedData').replaceWith(Asymcrypt.encryptedRows);
+						}).insertBefore('#separator_top');
+						for (var i = 0; i < Asymcrypt.castedVotes; i++) {
+							Poll.load("Asymcrypt", "vote_" + i, {
+								success: function (vote) {
+									Asymcrypt.encryptedRows += Asymcrypt.encryptedHtmlRow('encRow' + i, '<textarea rows="1" cols="1" style="width: 95%; margin-top:5px">' + JSON.parse(vote) + '</textarea>');
+								}
+							});
+						}
+					}
+				}
+			});
+
+			//catch the submit event
+			$('#polltable form').submit(function (e) {
+				e.preventDefault();
+
+				Asymcrypt.savePollData(db.encryption, db.keyId, db.key);
+
+				//shows the vote encrypted message
+				var messageEncrypted = _('Your vote is encrypted and saved.');
+				$(Asymcrypt.encryptedHtmlRow("", messageEncrypted)).insertBefore($('#add_participant'));
+				$('#add_participant, #encryptedData').hide();
+				return false;
+			});
+
+			$('tr[id^="encRow"] textarea').live('focusin', function () {
+				Asymcrypt.inputContent = $(this).val();
+				$(this).select();
+			}).live('focusout', function () {
+				if ($(this).val() !== Asymcrypt.inputContent) {  
+					$(this).parent().parent().remove();
+					var decodedText = JSON.parse($(this).val());
+					Poll.parseNaddRow(decodedText.name, decodedText);
+				}
+			});
+		}
+	});
+});
