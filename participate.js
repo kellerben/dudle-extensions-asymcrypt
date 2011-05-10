@@ -120,9 +120,17 @@ $(document).ready(function () {
 				$(this).select();
 			}).live('focusout', function () {
 				if ($(this).val() !== Asymcrypt.inputContent) {  
-					$(this).parent().parent().remove();
-					var decodedText = JSON.parse($(this).val());
-					Poll.parseNaddRow(decodedText.name, decodedText);
+					try {
+						var decodedText = JSON.parse($(this).val());
+						if (decodedText.name) {
+							Poll.parseNaddRow(decodedText.name, decodedText);
+							$(this).parent().parent().remove();
+						}
+					} catch (e) {
+						if (e.toString() !== "SyntaxError: Unexpected token ILLEGAL") {
+							throw e;
+						}
+					}
 				}
 			});
 		}
