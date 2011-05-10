@@ -26,9 +26,3 @@ if (typeof(Asymcrypt) === "undefined") {
 	alert("Somebody captured the Namespace Asymcrypt!!!");
 }
 
-
-Asymcrypt.getDB = function () {
-	var options = arguments[0] || {};
-	Poll.load("Asymcrypt", "initiator", options);
-};
-
