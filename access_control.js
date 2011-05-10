@@ -19,33 +19,21 @@
  ****************************************************************************/
 
 "use strict";
-/*global getPublicKey, s2r, randomString, doEncrypt*/
+/*global s2r, randomString*/
 
 /**
 * init poll for asymcrypt
 */
-Asymcrypt.saveData = function (publicKey, keyOwner) {
-	var pKey = new getPublicKey(publicKey), 
-		initiator = {},
-		write_passwd = s2r(randomString(9)),
+Asymcrypt.saveInitiator = function (publicKey) {
+	var write_passwd = s2r(randomString(9)),
 		write_passwd_enc;
+	Asymcrypt.setInitiator(publicKey);
 
-	initiator.keyId = pKey.keyid;
-	initiator.key = pKey.pkey.replace(/\n/g, '');
-	initiator.fingerprint = pKey.fp;
-	initiator.keyOwner = keyOwner;
-
-	if (pKey.type === "RSA") {
-		initiator.encryption = 0;
-	} else if (pKey.type === "ELGAMAL") {
-		initiator.encryption = 1;
-	}
-
-	write_passwd_enc = JSON.stringify(doEncrypt(initiator.keyId, initiator.encryption, initiator.key, write_passwd));
-	Poll.store("Asymcrypt", "initiator_pw", JSON.stringify(write_passwd_enc), {
+	write_passwd_enc = JSON.stringify(Asymcrypt.encrypt(write_passwd));
+	Poll.store("Asymcrypt", "initiator_pw", write_passwd_enc, {
 		write_passwd_new: write_passwd,
 		success: function () {
-			Poll.store("Asymcrypt", "initiator", JSON.stringify(initiator), {
+			Poll.store("Asymcrypt", "initiator", JSON.stringify(publicKey), {
 				write_passwd_new: write_passwd,
 				success: function () {
 					$('#ac_admin').unbind().submit();
@@ -132,8 +120,8 @@ $(document).ready(function () {
 						keyid: person.shift()
 					},
 					method: "get",
-					success: function (r) {
-						Asymcrypt.saveData(r, person.join(" "));
+					success: function (pubKey) {
+						Asymcrypt.saveInitiator(pubKey);
 					},
 					error: function (e) {
 						alert(e.responseText);
@@ -144,3 +132,4 @@ $(document).ready(function () {
 		}
 	});
 });
+var foo;

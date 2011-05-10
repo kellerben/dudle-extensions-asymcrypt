@@ -19,13 +19,13 @@
  ****************************************************************************/
 
 "use strict";
-/*global s2r, randomString, doEncrypt*/
+/*global s2r, randomString*/
 
 
 /**
 * saves the encrypted data to the asymcrypt_data.yaml
 */
-Asymcrypt.savePollData = function (encryption, keyId, publicKey) {
+Asymcrypt.savePollData = function () {
 	var enc_user_input, user_input = Poll.getParticipantInput();
 
 	if (user_input.name.length !== 0) {
@@ -37,7 +37,7 @@ Asymcrypt.savePollData = function (encryption, keyId, publicKey) {
 		delete(user_input.oldname);
 		
 		user_input.write_passwd = s2r(randomString(9));
-		enc_user_input = doEncrypt(keyId, encryption, publicKey, JSON.stringify(user_input));
+		enc_user_input = Asymcrypt.encrypt(JSON.stringify(user_input));
 		Poll.store("Asymcrypt", "vote_" + Asymcrypt.castedVotes, JSON.stringify(enc_user_input), {
 			success: function () {
 				Asymcrypt.castedVotes++;
@@ -48,23 +48,6 @@ Asymcrypt.savePollData = function (encryption, keyId, publicKey) {
 	}
 };
 
-
-/**
-* formats the fingerprint
-*/
-Asymcrypt.toFingerprint = function (fingerprint) {
-	fingerprint = fingerprint.toUpperCase();
-	var to = fingerprint.length,
-		niceFingerprint = "", i;
-	for (i = 0; i < to; i++) {
-		niceFingerprint += fingerprint[i];
-		if ((i + 1) % 4 === 0 && (i + 1) !== to) {
-			niceFingerprint += ' ';
-		}
-	}
-	return niceFingerprint;
-};
-
 Asymcrypt.encryptedRows = [];
 Asymcrypt.castedVotes = 0;
 Asymcrypt.loadVotes = function () {
@@ -72,11 +55,31 @@ Asymcrypt.loadVotes = function () {
 		error: {}, // finished now
 		success: function (vote) {
 			if (Asymcrypt.castedVotes === 0) {
-				Poll.addParticipantTR('encryptedData', printf(_('There are encrypted votes. Klick here if you are %1.'), [Asymcrypt.keyOwnerName]));
+				Poll.addParticipantTR('encryptedData', printf(_('There are encrypted votes. Klick here if you are %1.'), [Asymcrypt.initiator.name]));
 				$('#encryptedData').click(function () {
 					$('#encryptedData').remove();
 					for (var i = 0; i < Asymcrypt.encryptedRows.length; i++) {
 						Poll.addParticipantTR('encRow' + i, '<textarea rows="1" cols="1" style="width: 95%; margin-top:5px">' + Asymcrypt.encryptedRows[i] + '</textarea>');
+
+						$('#encRow' + i + ' textarea').bind({
+							focusin: function () {
+								Asymcrypt.inputContent = $(this).val();
+								$(this).select();
+							},
+							focusout: function () {
+								try {
+									var decodedText = JSON.parse($(this).val());
+									if (decodedText.name) {
+										Poll.parseNaddRow(decodedText.name, decodedText);
+										$(this).parent().parent().remove();
+									}
+								} catch (e) {
+									if (e.toString() !== "SyntaxError: Unexpected token ILLEGAL") {
+										throw e;
+									}
+								}
+							}
+						});
 					}
 				});
 			}
@@ -88,17 +91,13 @@ Asymcrypt.loadVotes = function () {
 };
 
 $(document).ready(function () {
-	Poll.load("Asymcrypt", "initiator", {
+	Asymcrypt.init({
 		error: {}, // poll is not configured for Asymcrypt
-		success: function (initiator) {
-			var db = JSON.parse(initiator),
-				hint;
-			Asymcrypt.keyOwnerName = $('<div/>').text(db.keyOwner.replace(/ <.*>/g, '')).html();
-			hint = '<div class="shorttextcolumn"';
-			// FIXME: check fingerprint
-			hint += 'title="' + printf(_("e-mail: %1, fingerprint: %2"), [db.keyOwner.replace(/^[^<]*</, '').replace(/>/, ""), Asymcrypt.toFingerprint(db.fingerprint)]);
+		success: function () {
+			var hint = '<div class="shorttextcolumn"';
+			hint += 'title="' + printf(_("e-mail: %1, fingerprint: %2"), [Asymcrypt.initiator.mail, Asymcrypt.initiator.fingerprint]);
 			hint += '"><span class="hint">';
-			hint += printf(_('Your vote will be encrypted to %1.'), [Asymcrypt.keyOwnerName]);
+			hint += printf(_('Your vote will be encrypted to %1.'), [Asymcrypt.initiator.name]);
 			hint += '</span></div>';
 			$(hint).insertBefore('#savebutton');
 
@@ -108,30 +107,11 @@ $(document).ready(function () {
 			$('#polltable form').submit(function (e) {
 				e.preventDefault();
 
-				Asymcrypt.savePollData(db.encryption, db.keyId, db.key);
+				Asymcrypt.savePollData();
 
 				//shows the vote encrypted message
 				Poll.hint(_('Thank you for your vote.'));
 				Poll.resetForm();
-			});
-
-			$('tr[id^="encRow"] textarea').live('focusin', function () {
-				Asymcrypt.inputContent = $(this).val();
-				$(this).select();
-			}).live('focusout', function () {
-				if ($(this).val() !== Asymcrypt.inputContent) {  
-					try {
-						var decodedText = JSON.parse($(this).val());
-						if (decodedText.name) {
-							Poll.parseNaddRow(decodedText.name, decodedText);
-							$(this).parent().parent().remove();
-						}
-					} catch (e) {
-						if (e.toString() !== "SyntaxError: Unexpected token ILLEGAL") {
-							throw e;
-						}
-					}
-				}
 			});
 		}
 	});
