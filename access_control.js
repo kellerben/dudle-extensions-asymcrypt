@@ -19,13 +19,17 @@
  ****************************************************************************/
 
 "use strict";
-/*global getPublicKey */
+/*global getPublicKey, s2r, randomString, doEncrypt*/
 
 /**
 * init poll for asymcrypt
 */
 Asymcrypt.saveData = function (publicKey, keyOwner) {
-	var pKey = new getPublicKey(publicKey), initiator = {};
+	var pKey = new getPublicKey(publicKey), 
+		initiator = {},
+		write_passwd = s2r(randomString(9)),
+		write_passwd_enc;
+
 	initiator.keyId = pKey.keyid;
 	initiator.key = pKey.pkey.replace(/\n/g, '');
 	initiator.fingerprint = pKey.fp;
@@ -36,12 +40,19 @@ Asymcrypt.saveData = function (publicKey, keyOwner) {
 	} else if (pKey.type === "ELGAMAL") {
 		initiator.encryption = 1;
 	}
-	
-	Poll.store("Asymcrypt", "initiator", JSON.stringify(initiator), {
+
+	write_passwd_enc = JSON.stringify(doEncrypt(initiator.keyId, initiator.encryption, initiator.key, write_passwd));
+	Poll.store("Asymcrypt", "initiator_pw", JSON.stringify(write_passwd_enc), {
+		write_passwd_new: write_passwd,
 		success: function () {
-			Poll.store("Asymcrypt", "castedVotes", "0", {
+			Poll.store("Asymcrypt", "initiator", JSON.stringify(initiator), {
+				write_passwd_new: write_passwd,
 				success: function () {
-					$('#ac_admin').unbind().submit();
+					Poll.store("Asymcrypt", "castedVotes", "0", {
+						success: function () {
+							$('#ac_admin').unbind().submit();
+						}
+					});
 				}
 			});
 		}
@@ -52,6 +63,7 @@ $(document).ready(function () {
 	/**
 	* if access_control.cgi is in the view where the admin password is set, asynchronous encryption will be an option
 	*/
+	// FIXME: detect if initiator is already configured
 	if ($('#ac_admin #password0').length === 1) {
 		var keytext = _("Activate asymmetric encryption?");
 		$('<tr><td></td><td><input type="checkbox" id="asymcrypt" name="asymcrypt" /><label for="asymcrypt">' + keytext + '</label></td></tr>').insertBefore($('#ac_admin tr:last'));

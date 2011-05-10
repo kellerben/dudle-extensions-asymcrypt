@@ -19,12 +19,8 @@
  ****************************************************************************/
 
 "use strict";
-/*global doEncrypt */
+/*global s2r, randomString, doEncrypt*/
 
-
-Asymcrypt.encrypt = function (encryption, keyId, publicKey, text) {
-	return doEncrypt(keyId, encryption, publicKey, text); // encryption 0-> RSA, 1->ElGamal 
-};
 
 /**
 * saves the encrypted data to the asymcrypt_data.yaml
@@ -40,8 +36,8 @@ Asymcrypt.savePollData = function (encryption, keyId, publicKey) {
 		user_input.name = escapeHtml(user_input.name);
 		delete(user_input.oldname);
 		
-		// FIXME: write passwd
-		enc_user_input = Asymcrypt.encrypt(encryption, keyId, publicKey, JSON.stringify(user_input));
+		user_input.write_passwd = s2r(randomString(9));
+		enc_user_input = doEncrypt(keyId, encryption, publicKey, JSON.stringify(user_input));
 		Poll.store("Asymcrypt", "vote_" + Asymcrypt.castedVotes, JSON.stringify(enc_user_input), {
 			success: function () {
 				Poll.store("Asymcrypt", "castedVotes", Asymcrypt.castedVotes + 1, {
@@ -49,7 +45,9 @@ Asymcrypt.savePollData = function (encryption, keyId, publicKey) {
 						Asymcrypt.castedVotes++;
 					}
 				});
-			}
+				Asymcrypt.encryptedRows.push(enc_user_input);
+			},
+			write_passwd_new: user_input.write_passwd
 		});
 	}
 };
@@ -93,12 +91,11 @@ $(document).ready(function () {
 					if (Asymcrypt.castedVotes > 0) {
 						Asymcrypt.encryptedRows = [];
 
-						// FIXME: mit irgendwas wie Poll.addline ersetzen
 						Poll.addParticipantTR('encryptedData', printf(_('There are encrypted votes. Klick here if you are %1.'), [keyOwnerName]));
 						$('#encryptedData').click(function () {
 							$('#encryptedData').remove();
 							for (var i = 0; i < Asymcrypt.encryptedRows.length; i++) {
-								Poll.addParticipantTR('encRow' + i, '<textarea rows="1" cols="1" style="width: 95%; margin-top:5px">' + Asymcrypt.encryptedRows[i] + '</textarea>')
+								Poll.addParticipantTR('encRow' + i, '<textarea rows="1" cols="1" style="width: 95%; margin-top:5px">' + Asymcrypt.encryptedRows[i] + '</textarea>');
 							}
 						});
 						for (var i = 0; i < Asymcrypt.castedVotes; i++) {
