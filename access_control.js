@@ -48,11 +48,7 @@ Asymcrypt.saveData = function (publicKey, keyOwner) {
 			Poll.store("Asymcrypt", "initiator", JSON.stringify(initiator), {
 				write_passwd_new: write_passwd,
 				success: function () {
-					Poll.store("Asymcrypt", "castedVotes", "0", {
-						success: function () {
-							$('#ac_admin').unbind().submit();
-						}
-					});
+					$('#ac_admin').unbind().submit();
 				}
 			});
 		}
