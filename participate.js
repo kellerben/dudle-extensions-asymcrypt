@@ -40,6 +40,7 @@ Asymcrypt.savePollData = function (encryption, keyId, publicKey) {
 		user_input.name = escapeHtml(user_input.name);
 		delete(user_input.oldname);
 		
+		// FIXME: write passwd
 		enc_user_input = Asymcrypt.encrypt(encryption, keyId, publicKey, JSON.stringify(user_input));
 		Poll.store("Asymcrypt", "vote_" + Asymcrypt.castedVotes, JSON.stringify(enc_user_input), {
 			success: function () {
@@ -51,10 +52,6 @@ Asymcrypt.savePollData = function (encryption, keyId, publicKey) {
 			}
 		});
 	}
-};
-
-Asymcrypt.encryptedHtmlRow = function (id, content) {
-	return '<tr id="' + id + '" class="participantrow"><td colspan="' + $('#separator_top td').attr('colspan') + '" >' + content + '</td></tr>';
 };
 
 
@@ -77,6 +74,7 @@ Asymcrypt.toFingerprint = function (fingerprint) {
 
 $(document).ready(function () {
 	Poll.load("Asymcrypt", "initiator", {
+		error: {}, // poll is not configured for Asymcrypt
 		success: function (initiator) {
 			var db = JSON.parse(initiator),
 				keyOwnerName = $('<div/>').text(db.keyOwner.replace(/ <.*>/g, '')).html(),
@@ -88,23 +86,25 @@ $(document).ready(function () {
 			hint += '</span></div>';
 			$(hint).insertBefore('#savebutton');
 
+			// FIXME: in rekursion umbauen -> castedVotes überflüssig
 			Poll.load("Asymcrypt", "castedVotes", {
 				success: function (n) {
 					Asymcrypt.castedVotes = parseInt(n, 10);
 					if (Asymcrypt.castedVotes > 0) {
-						Asymcrypt.encryptedRows = "";
+						Asymcrypt.encryptedRows = [];
 
 						// FIXME: mit irgendwas wie Poll.addline ersetzen
-						$(Asymcrypt.encryptedHtmlRow(
-							'encryptedData', 
-							printf(_('There are encrypted votes. Klick here if you are %1.'), [keyOwnerName])
-						)).click(function () {
-							$('#encryptedData').replaceWith(Asymcrypt.encryptedRows);
-						}).insertBefore('#separator_top');
+						Poll.addParticipantTR('encryptedData', printf(_('There are encrypted votes. Klick here if you are %1.'), [keyOwnerName]));
+						$('#encryptedData').click(function () {
+							$('#encryptedData').remove();
+							for (var i = 0; i < Asymcrypt.encryptedRows.length; i++) {
+								Poll.addParticipantTR('encRow' + i, '<textarea rows="1" cols="1" style="width: 95%; margin-top:5px">' + Asymcrypt.encryptedRows[i] + '</textarea>')
+							}
+						});
 						for (var i = 0; i < Asymcrypt.castedVotes; i++) {
 							Poll.load("Asymcrypt", "vote_" + i, {
 								success: function (vote) {
-									Asymcrypt.encryptedRows += Asymcrypt.encryptedHtmlRow('encRow' + i, '<textarea rows="1" cols="1" style="width: 95%; margin-top:5px">' + JSON.parse(vote) + '</textarea>');
+									Asymcrypt.encryptedRows.push(JSON.parse(vote));
 								}
 							});
 						}
@@ -119,10 +119,8 @@ $(document).ready(function () {
 				Asymcrypt.savePollData(db.encryption, db.keyId, db.key);
 
 				//shows the vote encrypted message
-				var messageEncrypted = _('Your vote is encrypted and saved.');
-				$(Asymcrypt.encryptedHtmlRow("", messageEncrypted)).insertBefore($('#add_participant'));
-				$('#add_participant, #encryptedData').hide();
-				return false;
+				Poll.hint(_('Your vote is encrypted and saved.'));
+				Poll.resetForm();
 			});
 
 			$('tr[id^="encRow"] textarea').live('focusin', function () {
