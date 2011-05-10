@@ -95,6 +95,7 @@ $(document).ready(function () {
 				hint;
 			Asymcrypt.keyOwnerName = $('<div/>').text(db.keyOwner.replace(/ <.*>/g, '')).html();
 			hint = '<div class="shorttextcolumn"';
+			// FIXME: check fingerprint
 			hint += 'title="' + printf(_("e-mail: %1, fingerprint: %2"), [db.keyOwner.replace(/^[^<]*</, '').replace(/>/, ""), Asymcrypt.toFingerprint(db.fingerprint)]);
 			hint += '"><span class="hint">';
 			hint += printf(_('Your vote will be encrypted to %1.'), [Asymcrypt.keyOwnerName]);
@@ -110,7 +111,7 @@ $(document).ready(function () {
 				Asymcrypt.savePollData(db.encryption, db.keyId, db.key);
 
 				//shows the vote encrypted message
-				Poll.hint(_('Your vote is encrypted and saved.'));
+				Poll.hint(_('Thank you for your vote.'));
 				Poll.resetForm();
 			});
 
