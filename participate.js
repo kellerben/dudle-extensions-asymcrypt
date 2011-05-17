@@ -55,7 +55,7 @@ Asymcrypt.loadVotes = function () {
 		error: {}, // finished now
 		success: function (vote) {
 			if (Asymcrypt.castedVotes === 0) {
-				Poll.addParticipantTR('encryptedData', printf(_('There are encrypted votes. Klick here if you are %1.'), [Asymcrypt.initiator.name]));
+				Poll.addParticipantTR('encryptedData', printf(_('There are encrypted votes. Click here if you are %1.'), [Asymcrypt.initiator.name]));
 				$('#encryptedData').click(function () {
 					$('#encryptedData').remove();
 					for (var i = 0; i < Asymcrypt.encryptedRows.length; i++) {

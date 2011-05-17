@@ -32,7 +32,8 @@ $body = ""
 case ($c["service"])
 when "peopleSearch"
 	# FIXME: keyserver returns 500 in case of no keys found or lookup to unspecific
-	page = Hpricot(open("http://pgp.zdv.uni-mainz.de:11371/pks/lookup?op=index&search=#{$c["name"].gsub(" ","+")}"))
+	# FIXME: delete expired keys (op=vindex)
+	page = Hpricot(open("http://pgp.zdv.uni-mainz.de:11371/pks/lookup?op=index&search=#{CGI.escape($c["name"])}"))
 	$body += page.search("//pre").collect{|a|
 		a.search("/a").collect{|e| e.inner_html }.join(" ") unless a.inner_html =~ /REVOKED/
 	}.compact.to_json

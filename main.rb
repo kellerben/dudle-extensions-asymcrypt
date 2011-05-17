@@ -18,34 +18,21 @@
 ############################################################################
 
 
+e = Extension.new
 
-extDir = "../extensions/asymcrypt"
-if File.exists?("#{extDir}/locale/#{GetText.locale.language}/dudle_asymcrypt.po")
-	$d.html.add_html_head("<link rel='gettext' type='application/x-po' href='#{extDir}/locale/#{GetText.locale.language}/dudle_asymcrypt.po' />")
-end
-
-$d.html.add_head_script("#{extDir}/lib/aes-enc.js")
-$d.html.add_head_script("#{extDir}/lib/base64.js")
-$d.html.add_head_script("#{extDir}/lib/mouse.js")
-$d.html.add_head_script("#{extDir}/lib/PGencode.js")
-$d.html.add_head_script("#{extDir}/lib/PGpubkey.js")
-$d.html.add_head_script("#{extDir}/lib/rsa.js")
-$d.html.add_head_script("#{extDir}/lib/sha1.js")
-$d.html.add_head_script("#{extDir}/common.js")
+e.add_lib("aes-enc")
+e.add_lib("base64")
+e.add_lib("mouse")
+e.add_lib("PGencode")
+e.add_lib("PGpubkey")
+e.add_lib("rsa")
+e.add_lib("sha1")
 
 $d.html.add_script(<<SCRIPT
-Asymcrypt.extDir = '#{extDir}';
+Asymcrypt.extDir = '#{e.basedir}';
 Asymcrypt.passwordStar = '#{PASSWORDSTAR}';
 SCRIPT
 )
 
-case $d.tab
-when "access_control.cgi"
-  $d.html.add_head_script("#{extDir}/access_control.js")
-when "." 
-  if $d.is_poll?
-    $d.html.add_head_script("#{extDir}/participate.js")
-  end
-end
-
+e.load_js
 
