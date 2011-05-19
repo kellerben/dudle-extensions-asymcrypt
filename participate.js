@@ -22,31 +22,6 @@
 /*global s2r, randomString*/
 
 
-/**
-* saves the encrypted data to the asymcrypt_data.yaml
-*/
-Asymcrypt.savePollData = function () {
-	var enc_user_input, user_input = Poll.getParticipantInput();
-
-	if (user_input.name.length !== 0) {
-		if (user_input.name.match(/"/) || user_input.name.match(/'/)) {
-			Poll.error(_("The username must not contain the characters ' and \"!"));
-			return false;
-		}
-		user_input.name = escapeHtml(user_input.name);
-		delete(user_input.oldname);
-		
-		user_input.write_passwd = s2r(randomString(9));
-		enc_user_input = Asymcrypt.encrypt(JSON.stringify(user_input));
-		Poll.store("Asymcrypt", "vote_" + Asymcrypt.castedVotes, JSON.stringify(enc_user_input), {
-			success: function () {
-				Asymcrypt.castedVotes++;
-				Asymcrypt.encryptedRows.push(enc_user_input);
-			},
-			write_passwd_new: user_input.write_passwd
-		});
-	}
-};
 
 Asymcrypt.encryptedRows = [];
 Asymcrypt.castedVotes = 0;
@@ -103,11 +78,27 @@ $(document).ready(function () {
 
 			Asymcrypt.loadVotes();
 
-			//catch the submit event
-			$('#polltable form').submit(function (e) {
-				e.preventDefault();
+			Poll.submitHook(function (user_input) {
+				var enc_user_input;
 
-				Asymcrypt.savePollData();
+				if (user_input.name.length !== 0) {
+					if (user_input.name.match(/"/) || user_input.name.match(/'/)) {
+						Poll.error(_("The username must not contain the characters ' and \"!"));
+						return false;
+					}
+					user_input.name = escapeHtml(user_input.name);
+					delete(user_input.oldname);
+
+					user_input.write_passwd = s2r(randomString(9));
+					enc_user_input = Asymcrypt.encrypt(JSON.stringify(user_input));
+					Poll.store("Asymcrypt", "vote_" + Asymcrypt.castedVotes, JSON.stringify(enc_user_input), {
+						success: function () {
+							Asymcrypt.castedVotes++;
+							Asymcrypt.encryptedRows.push(enc_user_input);
+						},
+						write_passwd_new: user_input.write_passwd
+					});
+				}
 
 				//shows the vote encrypted message
 				Poll.hint(_('Thank you for your vote.'));
