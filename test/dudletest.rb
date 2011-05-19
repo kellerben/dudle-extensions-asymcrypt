@@ -13,7 +13,7 @@ module DudleTest
 	@@options.leavepoll = true
 	@@options.fast_setup = true
 	@@options.highlight = false
-	@@options.browser = "*custom /usr/bin/google-chrome"
+	@@options.browser = "*custom /usr/bin/google-chrome --proxy-server=localhost:4444"
 
 	OPTPARSE = OptionParser.new{|opts|
 		opts.on('--[no-]fast-setup', 'clone the repo for faster setup', "default: #{@@options.fast_setup}"){|bool|
@@ -31,7 +31,7 @@ module DudleTest
 		opts.on("--browser (epiphany|firefox|opera|iexplore|chromium|chrome)", "use a specific browser"){|string|
 			case string
 			when "chrome"
-				@@options.browser = "*custom /usr/bin/google-chrome"
+				@@options.browser = "*custom /usr/bin/google-chrome --proxy-server=localhost:4444"
 			when "chromium"
 				@@options.browser = "*custom /usr/bin/chromium-browser"
 			when "epiphany"
