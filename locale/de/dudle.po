@@ -21,7 +21,7 @@ msgstr ""
 "Project-Id-Version: \n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2011-05-17 18:11+0200\n"
-"PO-Revision-Date: 2011-05-17 18:12+0100\n"
+"PO-Revision-Date: 2011-05-20 08:07+0100\n"
 "Last-Translator: Benjamin Kellermann <Benjamin.Kellermann@tu-dresden.de>\n"
 "Language-Team: \n"
 "Language: \n"
@@ -68,7 +68,7 @@ msgstr "Der Benutzername darf weder ' noch \" enthalten!"
 
 #: participate.js:58
 msgid "There are encrypted votes. Click here if you are %1."
-msgstr "Es gibt verschlüsselte stimmen. Klicken Sie hier, wenn Sie %1 sind."
+msgstr "Es gibt verschlüsselte Stimmen. Klicken Sie hier, wenn Sie %1 sind."
 
 #: participate.js:100
 msgid "Your vote will be encrypted to %1."
