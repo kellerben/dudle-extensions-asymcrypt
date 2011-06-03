@@ -80,7 +80,7 @@ class ParticipateTest  < Test::Unit::TestCase
 
 			tmpfile = "/tmp/participatetest.#{rand(9999)}"
 			File.open("#{tmpfile}.gpg","w"){|f| f << gpgtext }
-			`gpg -o #{tmpfile} --decrypt #{tmpfile}.gpg`
+			`gpg --no-tty -o #{tmpfile} --decrypt #{tmpfile}.gpg`
 			cleartext = File.open("#{tmpfile}","r").read
 			@s.type("//tr[@id='encRow#{i}']//textarea",cleartext)
 			@s.run_script("$('#encRow#{i} textarea').focusout()")
