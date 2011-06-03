@@ -28,15 +28,16 @@ Asymcrypt.castedVotes = 0;
 Asymcrypt.loadVotes = function () {
 	Poll.load("Asymcrypt", "vote_" + Asymcrypt.castedVotes, {
 		error: {}, // finished now
+		type: "json",
 		success: function (vote) {
 			if (Asymcrypt.castedVotes === 0) {
 				Poll.addParticipantTR('encryptedData', printf(_('There are encrypted votes. Click here if you are %1.'), [Asymcrypt.initiator.name]));
 				$('#encryptedData').click(function () {
 					$('#encryptedData').remove();
 					for (var i = 0; i < Asymcrypt.encryptedRows.length; i++) {
-						Poll.addParticipantTR('encRow' + i, '<textarea rows="1" cols="1" style="width: 95%; margin-top:5px">' + Asymcrypt.encryptedRows[i] + '</textarea>');
+						Poll.addParticipantTR('encRow' + i, '<textarea rows="4" cols="1" style="width: 95%; margin-top:5px">' + Asymcrypt.encryptedRows[i] + '</textarea>');
 
-						$('#encRow' + i + ' textarea').bind({
+						$('#encRow' + i + ' textarea').live({
 							focusin: function () {
 								Asymcrypt.inputContent = $(this).val();
 								$(this).select();
@@ -45,7 +46,7 @@ Asymcrypt.loadVotes = function () {
 								try {
 									var decodedText = JSON.parse($(this).val());
 									if (decodedText.name) {
-										Poll.parseNaddRow(decodedText.name, decodedText);
+										Poll.parseNaddRow(decodedText);
 										$(this).parent().parent().remove();
 									}
 								} catch (e) {
@@ -58,7 +59,7 @@ Asymcrypt.loadVotes = function () {
 					}
 				});
 			}
-			Asymcrypt.encryptedRows.push(JSON.parse(vote));
+			Asymcrypt.encryptedRows.push(JSON.parse(vote.data));
 			Asymcrypt.castedVotes += 1;
 			Asymcrypt.loadVotes();
 		}
