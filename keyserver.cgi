@@ -20,7 +20,7 @@
 
 require "rubygems"
 require "open-uri"
-require "hpricot"
+require "nokogiri"
 require "cgi"
 require "json"
 $c = CGI.new
@@ -33,9 +33,9 @@ case ($c["service"])
 when "peopleSearch"
 	# FIXME: delete expired keys (op=vindex)
 	begin
-		page = Hpricot(open("http://pgp.zdv.uni-mainz.de:11371/pks/lookup?op=index&search=#{CGI.escape($c["name"])}"))
+		page = Nokogiri(open("http://pgp.zdv.uni-mainz.de:11371/pks/lookup?op=index&search=#{CGI.escape($c["name"])}"))
 		$body += page.search("//pre").collect{|a|
-			a.search("/a").collect{|e| e.inner_html }.join(" ") unless a.inner_html =~ /REVOKED/
+			a.search("a").collect{|e| e.inner_html }.join(" ") unless a.inner_html =~ /REVOKED/
 		}.compact.to_json
 	rescue => e
 		if e.message =~ /^500/
@@ -47,7 +47,7 @@ when "peopleSearch"
 	end
 when "getPublicKey"
 	begin
-		page = Hpricot(open("http://pgp.zdv.uni-mainz.de:11371/pks/lookup?op=get&search=0x#{$c["keyid"]}"))
+		page = Nokogiri(open("http://pgp.zdv.uni-mainz.de:11371/pks/lookup?op=get&search=0x#{$c["keyid"]}"))
 		$body = page.search("//pre").inner_html.chomp.reverse.chomp.chomp.reverse
 	rescue => e
 		if e.message =~ /^500/
