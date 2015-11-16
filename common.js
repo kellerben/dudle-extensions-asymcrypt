@@ -18,7 +18,6 @@
  ***************************************************************************/
 
 "use strict";
-/*global getPublicKey, doEncrypt*/
 
 // Register Namespace
 if (typeof(Asymcrypt) === "undefined") {
@@ -29,13 +28,11 @@ if (typeof(Asymcrypt) === "undefined") {
 
 Asymcrypt.initiator = {};
 Asymcrypt.setInitiator = function (publicKey) {
-	var ini = {}, to, i, niceFingerprint, pKey = new getPublicKey(publicKey);
+	var ini = {}, to, i, niceFingerprint;
 
-	ini.keyId = pKey.keyid;
-	ini.key = pKey.pkey.replace(/\n/g, '');
+	ini.pubkey = new openpgp.key.readArmored(publicKey);
 
-	ini.fp = pKey.fp;
-	ini.fingerprint = ini.fp.toUpperCase();
+	ini.fingerprint = ini.pubkey.keys[0].primaryKey.fingerprint.toUpperCase();
 	to = ini.fingerprint.length;
 	niceFingerprint = "";
 	for (i = 0; i < to; i++) {
@@ -46,19 +43,14 @@ Asymcrypt.setInitiator = function (publicKey) {
 	}
 	ini.fingerprint = niceFingerprint;
 
-	if (pKey.type === "RSA") {
-		ini.encryption = 0;
-	} else if (pKey.type === "ELGAMAL") {
-		ini.encryption = 1;
-	}
-	ini.user = pKey.user;
-	ini.name = $('<div/>').text(pKey.user.replace(/ <.*>/g, '')).html();
-	ini.mail = pKey.user.replace(/^[^<]*</, '').replace(/>/, "");
+	ini.user = ini.pubkey.keys[0].users[0].userId.userid;
+	ini.name = $('<div/>').text(ini.user.replace(/ <.*>/g, '')).html();
+	ini.mail = ini.user.replace(/^[^<]*</, '').replace(/>/, "");
 	Asymcrypt.initiator = ini;
 };
 
-Asymcrypt.encrypt = function (plain) {
-	return doEncrypt(Asymcrypt.initiator.keyId, Asymcrypt.initiator.encryption, Asymcrypt.initiator.key, plain);
+Asymcrypt.encrypt = function (plain, readyfunc) {
+	openpgp.encryptMessage(Asymcrypt.initiator.pubkey.keys, plain).then(readyfunc);	
 };
 
 Asymcrypt.init = function () {
@@ -72,3 +64,12 @@ Asymcrypt.init = function () {
 	};
 	Poll.load("Asymcrypt", "initiator", options);
 };
+
+Asymcrypt.pwgen = function (num) {
+	var i, ret = "", keyspace = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/="
+"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=";
+	for (i = 0; i < num; i++) {
+		ret += keyspace[openpgp.crypto.random.getSecureRandom(0,keyspace.length-1)];
+	}
+	return ret;
+}

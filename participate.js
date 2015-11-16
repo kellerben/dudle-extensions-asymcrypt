@@ -19,9 +19,6 @@
  ****************************************************************************/
 
 "use strict";
-/*global s2r, randomString*/
-
-
 
 Asymcrypt.encryptedRows = [];
 Asymcrypt.castedVotes = 0;
@@ -65,7 +62,7 @@ Asymcrypt.loadVotes = function () {
 		}
 	});
 };
-
+var a;
 $(document).ready(function () {
 	Asymcrypt.init({
 		error: {}, // poll is not configured for Asymcrypt
@@ -90,14 +87,17 @@ $(document).ready(function () {
 					user_input.name = escapeHtml(user_input.name);
 					delete(user_input.oldname);
 
-					user_input.write_passwd = s2r(randomString(9));
-					enc_user_input = Asymcrypt.encrypt(JSON.stringify(user_input));
-					Poll.store("Asymcrypt", "vote_" + Asymcrypt.castedVotes, JSON.stringify(enc_user_input), {
-						success: function () {
-							Asymcrypt.castedVotes++;
-							Asymcrypt.encryptedRows.push(enc_user_input);
-						},
-						write_passwd_new: user_input.write_passwd
+					// FIXME: possibiltiy to change vote
+					user_input.write_passwd = Asymcrypt.pwgen(10);
+					a = user_input;
+					Asymcrypt.encrypt(JSON.stringify(user_input), function (enc_user_input) {
+						Poll.store("Asymcrypt", "vote_" + Asymcrypt.castedVotes, JSON.stringify(enc_user_input), {
+							success: function () {
+								Asymcrypt.castedVotes++;
+								Asymcrypt.encryptedRows.push(enc_user_input);
+							},
+							write_passwd_new: user_input.write_passwd
+						});
 					});
 				}
 

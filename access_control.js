@@ -19,26 +19,18 @@
  ****************************************************************************/
 
 "use strict";
-/*global s2r, randomString*/
 
 /**
 * init poll for asymcrypt
 */
 Asymcrypt.saveInitiator = function (publicKey) {
-	var write_passwd = s2r(randomString(9)),
-		write_passwd_enc;
 	Asymcrypt.setInitiator(publicKey);
 
-	write_passwd_enc = JSON.stringify(Asymcrypt.encrypt(write_passwd));
-	Poll.store("Asymcrypt", "initiator_pw", write_passwd_enc, {
-		write_passwd_new: write_passwd,
+	Poll.store("Asymcrypt", "initiator", JSON.stringify(publicKey), {
+		// FIXME: store password with PBKDF2/bcrypt 
+		write_passwd_new: $("#password0").val(),
 		success: function () {
-			Poll.store("Asymcrypt", "initiator", JSON.stringify(publicKey), {
-				write_passwd_new: write_passwd,
-				success: function () {
-					$('#ac_admin').unbind().submit();
-				}
-			});
+			$('#ac_admin').unbind().submit();
 		}
 	});
 };

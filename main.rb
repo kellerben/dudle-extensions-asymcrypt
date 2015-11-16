@@ -1,5 +1,5 @@
 ############################################################################
-# Copyright 2010,2011 Benjamin Kellermann                                  #
+# Copyright Benjamin Kellermann                                            #
 #                                                                          #
 # This file is part of dudle.                                              #
 #                                                                          #
@@ -20,19 +20,12 @@
 
 e = Extension.new
 
-e.add_lib("aes-enc")
-e.add_lib("base64")
-e.add_lib("mouse")
-e.add_lib("PGencode")
-e.add_lib("PGpubkey")
-e.add_lib("rsa")
-e.add_lib("sha1")
-
 $d.html.add_script(<<SCRIPT
 Asymcrypt.extDir = '#{e.basedir}';
 Asymcrypt.passwordStar = '#{PASSWORDSTAR}';
 SCRIPT
 )
 
+e.add_lib("openpgp.min")
 e.load_js
 
