@@ -7,6 +7,7 @@ The encryption is done via Javascript.
 
 # Additional Requirements
  * dudle with dudle-extension-participate
+ * ruby-nokogiri
 
 # License
 GNU AGPL v3 or higher (see file License)
