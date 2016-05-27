@@ -34,7 +34,7 @@ Asymcrypt.loadVotes = function () {
 					for (var i = 0; i < Asymcrypt.encryptedRows.length; i++) {
 						Poll.addParticipantTR('encRow' + i, '<textarea rows="4" cols="1" style="width: 95%; margin-top:5px">' + Asymcrypt.encryptedRows[i] + '</textarea>');
 
-						$('#encRow' + i + ' textarea').live({
+						$('#encRow' + i + ' textarea').on({
 							focusin: function () {
 								Asymcrypt.inputContent = $(this).val();
 								$(this).select();
