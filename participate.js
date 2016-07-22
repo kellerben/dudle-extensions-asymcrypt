@@ -42,10 +42,8 @@ Asymcrypt.loadVotes = function () {
 							focusout: function () {
 								try {
 									var decodedText = JSON.parse($(this).val());
-									if (decodedText.name) {
-										Poll.parseNaddRow(decodedText);
-										$(this).parent().parent().remove();
-									}
+									Poll.parseNaddRow(decodedText);
+									$(this).parent().parent().remove();
 								} catch (e) {
 									if (e.toString() !== "SyntaxError: Unexpected token ILLEGAL") {
 										throw e;
@@ -62,7 +60,7 @@ Asymcrypt.loadVotes = function () {
 		}
 	});
 };
-var a;
+
 $(document).ready(function () {
 	Asymcrypt.init({
 		error: {}, // poll is not configured for Asymcrypt
@@ -79,31 +77,28 @@ $(document).ready(function () {
 			Poll.submitHook(function (user_input) {
 				var enc_user_input;
 
-				if (user_input.name.length !== 0) {
-					if (user_input.name.match(/"/) || user_input.name.match(/'/)) {
-						Poll.error(_("The username must not contain the characters ' and \"!"));
-						return false;
-					}
-					user_input.name = escapeHtml(user_input.name);
-					delete(user_input.oldname);
+				if (user_input.name.match(/"/) || user_input.name.match(/'/)) {
+					Poll.error(_("The username must not contain the characters ' and \"!"));
+				return false;
+			}
+			user_input.name = escapeHtml(user_input.name);
+			delete(user_input.oldname);
 
-					// FIXME: possibiltiy to change vote
-					user_input.write_passwd = Asymcrypt.pwgen(10);
-					a = user_input;
-					Asymcrypt.encrypt(JSON.stringify(user_input), function (enc_user_input) {
-						Poll.store("Asymcrypt", "vote_" + Asymcrypt.castedVotes, JSON.stringify(enc_user_input), {
-							success: function () {
-								Asymcrypt.castedVotes++;
-								Asymcrypt.encryptedRows.push(enc_user_input);
-							},
-							write_passwd_new: user_input.write_passwd
-						});
-					});
-				}
+			// FIXME: possibiltiy to change vote
+			user_input.write_passwd = Asymcrypt.pwgen(10);
+			Asymcrypt.encrypt(JSON.stringify(user_input), function (enc_user_input) {
+				Poll.store("Asymcrypt", "vote_" + Asymcrypt.castedVotes, JSON.stringify(enc_user_input), {
+					success: function () {
+						Asymcrypt.castedVotes++;
+						Asymcrypt.encryptedRows.push(enc_user_input);
+					},
+					write_passwd_new: user_input.write_passwd
+				});
+			});
 
-				//shows the vote encrypted message
-				Poll.hint(_('Thank you for your vote.'));
-				Poll.resetForm();
+			//shows the vote encrypted message
+			Poll.hint(_('Thank you for your vote.'));
+			Poll.resetForm();
 			});
 		}
 	});
