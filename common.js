@@ -50,7 +50,13 @@ Asymcrypt.setInitiator = function (publicKey) {
 };
 
 Asymcrypt.encrypt = function (plain, readyfunc) {
-	openpgp.encryptMessage(Asymcrypt.initiator.pubkey.keys, plain).then(readyfunc);	
+	openpgp.encrypt({
+		publicKeys: Asymcrypt.initiator.pubkey.keys,
+		data: plain,
+		armor: true
+	}).then(function(enc){
+		readyfunc(enc.data);
+	});
 };
 
 Asymcrypt.init = function () {
