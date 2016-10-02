@@ -78,7 +78,7 @@ $(document).ready(function () {
 				var enc_user_input;
 
 				if (user_input.name.match(/"/) || user_input.name.match(/'/)) {
-					Poll.error(_("The username must not contain the characters ' and \"!"));
+					Poll.hint(_("The username must not contain the characters ' and \"!"));
 				return false;
 			}
 			user_input.name = escapeHtml(user_input.name);
